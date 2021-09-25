@@ -1,0 +1,75 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.environment}}-{{ .Values.persistent_vol.name}}
+spec:
+  storageClassName: {{ .Values.persistent_vol.StorageClassName}}
+  capacity:
+    storage: {{ .Values.persistent_vol.capacity}}
+  accessModes:
+    - {{ .Values.persistent_vol.accessMode}}
+  nfs:
+    server: {{ .Values.persistent_vol.nfs.server}}
+    path: {{ .Values.persistent_vol.nfs.path}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.environment}}-{{ .Values.persistent_vol_claim.name}}
+spec:
+  storageClassName: {{ .Values.persistent_vol_claim.storageClassName}}
+  accessModes:
+    - {{ .Values.persistent_vol_claim.accessMode}}
+  resources:
+    requests:
+      storage: {{ .Values.persistent_vol_claim.storageRequest}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.environment}}-{{ .Values.service.name}}
+spec:
+  ports:
+  - port: {{ .Values.service.port}}
+    targetPort: {{ .Values.service.targetPort}}
+    nodePort: {{ .Values.service.nodePort}}
+  selector:
+    app: {{ .Values.environment}}-{{ .Values.mysql_db.name}}
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.environment}}-{{ .Values.mysql_db.name}}
+spec:
+  replicas: {{ .Values.mysql_db.replicaCount}}
+  selector:
+    matchLabels:
+      app: {{ .Values.environment}}-{{ .Values.mysql_db.name}}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.environment}}-{{ .Values.mysql_db.name}}
+    spec:
+      containers:
+      - image: mysql:5.7
+        name: mysql
+        env:
+          # Use secret in real usage
+        - name: MYSQL_ROOT_PASSWORD
+          value: password
+        - name: MYSQL_DATABASE
+          value: toolr
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: {{ .Values.environment}}-{{ .Values.mysql_db.container.volumn_name}}
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: {{ .Values.environment}}-{{ .Values.mysql_db.container.volumn_name}}
+        persistentVolumeClaim:
+          claimName: {{ .Values.environment}}-{{ .Values.persistent_vol_claim.name}}

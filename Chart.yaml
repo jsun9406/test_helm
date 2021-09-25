@@ -1,0 +1,6 @@
+apiVersion: v2
+name: toolr_mysql
+description: Helm chart for toolr mysql
+type: application
+version: "1.0.12"
+appVersion: "1.0.12"

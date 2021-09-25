@@ -1,0 +1,41 @@
+environment: dev
+
+name_space:
+  name: toolr
+
+persistent_vol:
+  name: mysql-pv-volume
+  StorageClassName: manual
+  capacity: 5Gi
+  accessMode: ReadWriteMany
+  hostPath:
+    path: "/mnt/share"
+  nfs:
+    server: 192.168.1.76
+    path: "/k8s/pv/nfs/qa-toolr-sql" # this path needs to be created on nfs server
+
+persistent_vol_claim:
+  name: toolr-mysql-pv-claim
+  storageClassName: manual
+  accessMode: ReadWriteMany
+  storageRequest: 3Gi
+
+service:
+  name: toolr-mysql-svc
+  port: 3306
+  targetPort: 3306
+  nodePort: 30000
+
+mysql_db:
+  name: toolr-mysql
+  replicaCount: 1
+  container:
+    image: mysql:5.7
+    volumn_name: mysql-persistent-storage
+  service:
+    type: NodePort
+    port: 3306
+    targetPort: 3306
+    nodePort: 30000
+  password: password
+
